@@ -1,7 +1,7 @@
 import Combine
 import Foundation
-import SwiftUI // 引入 SwiftUI 以使用 @Published
 import LoggerProxy
+import SwiftUI // 引入 SwiftUI 以使用 @Published
 
 /// 作为所有视图的数据源和业务逻辑中心。
 public class DatabaseViewModel: ObservableObject {
@@ -24,8 +24,9 @@ public class DatabaseViewModel: ObservableObject {
     @Published public var currentPage: Int = 1
     /// 是否正在加载数据
     @Published public var isLoading: Bool = false
-    
+
     // MARK: - 高级筛选器状态
+
     /// 当前筛选条件列表
     @Published public var advancedFilterConditions: [FilterCondition] = []
     /// 是否处于手动 SQL 编辑模式
@@ -57,6 +58,9 @@ public class DatabaseViewModel: ObservableObject {
 
     /// 连接到数据库
     func connectToDatabase() {
+        if isConnected {
+            return
+        }
         isLoading = true
         do {
             try database.connect()
@@ -144,7 +148,7 @@ public class DatabaseViewModel: ObservableObject {
                 if let filter = self.queryParameters.filterClause, !filter.isEmpty {
                     sql += " WHERE \(filter)"
                     countSql += " WHERE \(filter)"
-                    
+
                     if let args = self.queryParameters.filterArguments {
                         parameters.append(contentsOf: args as [Any?])
                     }
@@ -217,7 +221,7 @@ public class DatabaseViewModel: ObservableObject {
         // 重新加载 Schema 和 DDL，因为筛选可能影响总行数
         loadSchemaAndDDL()
     }
-    
+
     /// 应用高级筛选
     /// - Parameters:
     ///   - conditions: 筛选条件列表
@@ -225,14 +229,14 @@ public class DatabaseViewModel: ObservableObject {
     ///   - manualSQL: 手动输入的 SQL
     func applyAdvancedFilter(conditions: [FilterCondition], isManualMode: Bool, manualSQL: String) {
         // 保存状态
-        self.advancedFilterConditions = conditions
-        self.isManualSQLMode = isManualMode
-        self.manualFilterSQL = manualSQL
-        
+        advancedFilterConditions = conditions
+        isManualSQLMode = isManualMode
+        manualFilterSQL = manualSQL
+
         // 生成 WHERE 子句
         let filterClause: String?
         let arguments: [Any]?
-        
+
         if isManualMode {
             filterClause = manualSQL.isEmpty ? nil : manualSQL
             arguments = nil // 手动模式目前不支持参数绑定
@@ -244,10 +248,10 @@ public class DatabaseViewModel: ObservableObject {
             } else {
                 var sql = ""
                 var args: [Any] = []
-                
+
                 for (index, condition) in validConditions.enumerated() {
                     guard let result = condition.toParameterizedSQL() else { continue }
-                    
+
                     if index > 0 {
                         sql += " \(condition.logicalOperator.rawValue) "
                     }
@@ -258,10 +262,10 @@ public class DatabaseViewModel: ObservableObject {
                 arguments = args
             }
         }
-        
+
         applyFilter(filterClause: filterClause, arguments: arguments)
     }
-    
+
     /// 清除所有筛选
     func clearAllFilters() {
         advancedFilterConditions = []
@@ -280,12 +284,12 @@ public class DatabaseViewModel: ObservableObject {
         queryParameters.filterClause = nil // 清除筛选条件
         queryParameters.filterArguments = nil // 清除筛选参数
         queryParameters.sortColumn = nil // 清除排序
-        
+
         // 重置高级筛选器状态
         advancedFilterConditions = []
         isManualSQLMode = false
         manualFilterSQL = ""
-        
+
         loadSchemaAndDDL() // 加载新表的 Schema 和 DDL
         // loadTableData 会被 queryParameters 的 sink 触发
     }

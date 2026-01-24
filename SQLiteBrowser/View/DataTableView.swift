@@ -76,19 +76,15 @@ public struct DataTableView: View {
         }
         .sheet(isPresented: $showSchema) {
             schemaSheet
-                .frame(minWidth: 600, idealWidth: 800, maxWidth: .infinity, minHeight: 400, idealHeight: 600, maxHeight: .infinity)
         }
         .sheet(isPresented: $showDDL) {
             ddlSheet
-                .frame(minWidth: 600, idealWidth: 800, maxWidth: .infinity, minHeight: 400, idealHeight: 600, maxHeight: .infinity)
         }
         .sheet(isPresented: $showFilter) {
             filterSheet
-                .frame(minWidth: 600, idealWidth: 800, maxWidth: .infinity, minHeight: 400, idealHeight: 600, maxHeight: .infinity)
         }
         .sheet(isPresented: $showRowDetail) {
             rowDetailSheet
-                .frame(minWidth: 600, idealWidth: 800, maxWidth: .infinity, minHeight: 400, idealHeight: 600, maxHeight: .infinity)
         }
     }
 
@@ -180,7 +176,6 @@ public struct DataTableView: View {
                     sortOrder: viewModel.queryParameters.sortColumn == column.name ? viewModel.queryParameters.sortOrder : nil,
                     width: width(for: column.name),
                     onSort: { viewModel.sort(byColumn: column.name) },
-
                     onResize: { translation, isEnded in
                         if isEnded {
                             // Drag ended - save the final width and hide preview
@@ -270,19 +265,43 @@ public struct DataTableView: View {
 
     private var schemaSheet: some View {
         guard let schema = viewModel.currentSchema else { return AnyView(Text("No schema available")) }
-        return AnyView(
-            SchemaView(schema: [schema])
-                .toolbar {
-                    Button("Done") { showSchema = false }
+        let view = SchemaView(schema: [schema])
+            .toolbar {
+                Button("Done") { showSchema = false }
+            }
 
-                })
+        #if os(macOS)
+            return AnyView(
+                view.frame(minWidth: 600, idealWidth: 800, maxWidth: .infinity, minHeight: 400, idealHeight: 600, maxHeight: .infinity)
+            )
+        #else
+            return AnyView(
+                NavigationView {
+                    view
+                        .navigationTitle("Schema")
+                        .navigationBarTitleDisplayMode(.inline)
+                }
+            )
+        #endif
     }
 
     private var ddlSheet: some View {
-        DDLView(ddl: viewModel.currentDDL)
+        let view = DDLView(ddl: viewModel.currentDDL)
             .toolbar {
                 Button("Done") { showDDL = false }
             }
+
+        #if os(macOS)
+            return AnyView(view.frame(minWidth: 600, idealWidth: 800, maxWidth: .infinity, minHeight: 400, idealHeight: 600, maxHeight: .infinity))
+        #else
+            return AnyView(
+                NavigationView {
+                    view
+                        .navigationTitle("DDL")
+                        .navigationBarTitleDisplayMode(.inline)
+                }
+            )
+        #endif
     }
 
     private var filterSheet: some View {
@@ -290,7 +309,9 @@ public struct DataTableView: View {
             AdvancedFilterView(viewModel: viewModel)
                 .frame(minWidth: 600, idealWidth: 800, minHeight: 500, idealHeight: 700)
         #else
-            AdvancedFilterView(viewModel: viewModel)
+            NavigationView {
+                AdvancedFilterView(viewModel: viewModel)
+            }
         #endif
     }
 
@@ -340,6 +361,11 @@ public struct DataTableView: View {
 // Header Cell with Resizing Logic
 
 struct HeaderCell: View {
+    #if os(macOS)
+        private let PLATFORM_DRAG_WIDTH: CGFloat = 10
+    #else
+        private let PLATFORM_DRAG_WIDTH: CGFloat = 24
+    #endif
     let name: String
     let sortOrder: SortOrder?
     let width: CGFloat
@@ -368,13 +394,13 @@ struct HeaderCell: View {
 
             // Resize Handle Overlay
             Rectangle()
-                .fill(Color.gray.opacity(0.01)) // Almost transparent but hittable
-                .frame(width: 14) // Wider hit area
-                .overlay(
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 1)
-                )
+                .fill(Color.gray.opacity(0.3)) // Almost transparent but hittable
+                .frame(width: PLATFORM_DRAG_WIDTH) // Wider hit area
+//                .overlay(
+//                    Rectangle()
+//                        .fill(Color.gray.opacity(0.3))
+//                        .frame(width: 1)
+//                )
                 .contentShape(Rectangle())
                 .gesture(
                     DragGesture()

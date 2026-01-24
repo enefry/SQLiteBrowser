@@ -31,7 +31,7 @@ public struct QueryParameters {
     /// - Parameter sortOrder: 排序顺序，默认为 .asc
     /// - Parameter filterClause: SQL `WHERE` 子句，默认为 nil
     /// - Parameter filterArguments: SQL `WHERE` 子句参数，默认为 nil
-    public init(tableName: String, limit: Int = 50, offset: Int = 0, sortColumn: String? = nil, sortOrder: SortOrder = .asc, filterClause: String? = nil, filterArguments: [Any]? = nil) {
+    public init(tableName: String, limit: Int = 50, offset: Int = 0, sortColumn: String? = nil, sortOrder: SortOrder = .desc, filterClause: String? = nil, filterArguments: [Any]? = nil) {
         self.tableName = tableName
         self.limit = limit
         self.offset = offset

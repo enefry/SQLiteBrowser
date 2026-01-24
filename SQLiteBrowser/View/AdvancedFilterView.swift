@@ -86,7 +86,7 @@ public struct AdvancedFilterView: View {
                 Text("SQL 编辑").tag(true)
             }
             .pickerStyle(.segmented)
-            .frame(width: 200)
+            // .frame(width: 200)
         }
     }
 
