@@ -6,7 +6,7 @@ public struct DataTableView: View {
     @ObservedObject var viewModel: DatabaseViewModel
 
     /// 控制 Blob 预览的 Sheet
-    @State private var selectedBlobData: Data?
+    @State private var selectedBlobData: IdentifiableData?
     /// 控制 Schema 视图的显示
     @State private var showSchema = false
     /// 控制 DDL 视图的显示
@@ -37,16 +37,16 @@ public struct DataTableView: View {
                 toolbarMenu
             }
         }
-        .sheet(item: Binding<IdentifiableData?>(
-            get: { selectedBlobData.map { IdentifiableData(data: $0) } },
-            set: { selectedBlobData = $0?.data }
-        )) { identifiableData in
+        .sheet(item: $selectedBlobData) { identifiableData in
             VStack(spacing: 0) {
                 // Custom navigation bar
                 HStack {
                     Text("Blob Preview")
                         .font(.headline)
                     Spacer()
+                    Button("切换视图") {
+                        identifiableData.showHex.toggle()
+                    }
                     Button("关闭") {
                         selectedBlobData = nil
                     }
@@ -61,13 +61,11 @@ public struct DataTableView: View {
 
                 Divider()
 
-                MediaView(data: identifiableData.data)
-                    .border(Color.blue)
+                MediaView(data: identifiableData)
                     .padding(4)
             }
-            .border(Color.green)
             #if os(macOS)
-                .frame(minWidth: 600, idealWidth: 800, maxWidth: .infinity, minHeight: 400, idealHeight: 600, maxHeight: .infinity)
+            .frame(minWidth: 600, idealWidth: 800, maxWidth: .infinity, minHeight: 400, idealHeight: 600, maxHeight: .infinity)
             #endif
             #if os(iOS)
             .presentationDetents([.large, .medium])
@@ -117,6 +115,7 @@ public struct DataTableView: View {
                                 ForEach(viewModel.currentSchema?.columns ?? [], id: \.name) { column in
                                     CellView(row: row, column: column, selectedBlobData: $selectedBlobData)
                                         .frame(width: width(for: column.name))
+                                        .frame(minHeight: 32)
                                         .border(Color.gray.opacity(0.1), width: 0.5) // 单元格边框
                                 }
                                 Spacer(minLength: 0)
@@ -425,13 +424,13 @@ struct HeaderCell: View {
 struct CellView: View {
     let row: TableRow
     let column: Column
-    @Binding var selectedBlobData: Data?
+    @Binding var selectedBlobData: IdentifiableData?
 
     var body: some View {
         Group {
             if let dataVal = row.dataValues(forColumn: column.name) {
                 Button(action: {
-                    selectedBlobData = dataVal
+                    selectedBlobData = IdentifiableData(row: row, column: column, data: dataVal)
                 }) {
                     Label("Blob", systemImage: "doc.text.fill")
                         .font(.caption)
@@ -460,7 +459,17 @@ struct CellView: View {
 }
 
 // 辅助结构体用于 Sheet 的 Identifiable
-struct IdentifiableData: Identifiable {
-    let id = UUID()
+class IdentifiableData: Identifiable, ObservableObject {
+    let id: String
+    let tableRow: TableRow
+    let column: Column
     let data: Data
+    @Published var showHex: Bool = true
+    init(row: TableRow, column: Column, data: Data, showHex: Bool = true) {
+        tableRow = row
+        self.column = column
+        id = "\(row.id.uuidString)-\(column.name)"
+        self.data = data
+        self.showHex = showHex
+    }
 }

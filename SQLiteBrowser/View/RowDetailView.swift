@@ -4,87 +4,79 @@ import SwiftUI
 struct RowDetailView: View {
     let row: TableRow
     let schema: TableSchema
-    @Binding var selectedBlobData: Data?
+    @Binding var selectedBlobData: IdentifiableData?
+
+    @ViewBuilder
+    fileprivate func valueView(column: Column) -> some View {
+        HStack {
+            // 第二行：字段值
+            if let dataVal = row.dataValues(forColumn: column.name) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Blob (\(dataVal.count) 字节)")
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundColor(.secondary)
+                    Button(action: {
+                        selectedBlobData = IdentifiableData(row: row, column: column, data: dataVal)
+                    }) {
+                        Label("预览 Blob", systemImage: "doc.text.fill")
+                    }
+                    .buttonStyle(.bordered)
+                }
+            } else if let val = row.value(forColumn: column.name) {
+                Text("\(String(describing: val))")
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundColor(.primary)
+                    .textSelection(.enabled)
+            } else {
+                Text("NULL")
+                    .font(.system(.body, design: .monospaced))
+                    .italic()
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(4)
+    }
+
+    @ViewBuilder
+    func fieldInfoValue(column: Column) -> some View {
+        return // 第一行：字段名称和属性图标
+            HStack(spacing: 8) {
+                // 字段名称
+                Text("字段名: \(column.name)")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                Spacer()
+                // 图标右对齐
+                HStack(alignment: .center, spacing: 2) {
+                    // 主键图标
+                    if column.isPrimaryKey {
+                        Image(systemName: "key.circle.fill")
+                            .font(.body)
+                            .foregroundColor(.green)
+                    }
+
+                    // 可空标识
+                    if !column.isNullable {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .font(.body)
+                            .foregroundColor(.green)
+                    }
+                    // 数据类型图标
+                    Image(typeIcon(for: column.dataType), bundle: Bundle.module)
+                        .imageScale(.medium)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
+            }
+    }
 
     var body: some View {
         Form {
             ForEach(schema.columns, id: \.name) { column in
-                VStack(alignment: .leading, spacing: 8) {
-                    // 第一行：字段名称和属性图标
-                    HStack(spacing: 8) {
-                        // 字段名称
-                        Text(column.name)
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        Spacer()
-                        // 图标右对齐
-
-                        HStack(alignment: .center, spacing: 2) {
-                            // 主键图标
-                            if column.isPrimaryKey {
-                                Image(systemName: "key.circle.fill")
-                                    .font(.body)
-                                    .foregroundColor(.green)
-                            }
-
-                            // 可空标识
-                            if !column.isNullable {
-                                Image(systemName: "exclamationmark.circle.fill")
-                                    .font(.body)
-                                    .foregroundColor(.green)
-                            }
-                            // 数据类型图标
-                            Image(typeIcon(for: column.dataType))
-                                .imageScale(.large)
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-
-                    // 第二行：字段值
-                    if let dataVal = row.dataValues(forColumn: column.name) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Blob (\(dataVal.count) 字节)")
-                                .font(.system(.body, design: .monospaced))
-                                .foregroundColor(.secondary)
-                            Button(action: {
-                                selectedBlobData = dataVal
-                            }) {
-                                Label("预览 Blob", systemImage: "doc.text.fill")
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                    } else if let val = row.value(forColumn: column.name) {
-                        Text("\(String(describing: val))")
-                            .font(.system(.body, design: .monospaced))
-                            .foregroundColor(.primary)
-                            .textSelection(.enabled)
-                            .padding(.leading, 4)
-                    } else {
-                        Text("NULL")
-                            .font(.system(.body, design: .monospaced))
-                            .italic()
-                            .foregroundColor(.secondary)
-                            .padding(.leading, 4)
-                    }
-
-                    // 默认值（如果存在）
-                    if let defaultVal = column.defaultValue {
-                        HStack(spacing: 4) {
-                            Text("默认:")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(defaultVal)
-                                .font(.system(.caption, design: .monospaced))
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.leading, 4)
-                    }
-                }
-                .padding(.vertical, 8)
-
-                if column.name != schema.columns.last?.name {
-                    Divider()
+                VStack(alignment: .leading, spacing: 0) {
+                    fieldInfoValue(column: column)
+                        .padding(.bottom, 4)
+                    valueView(column: column)
                 }
             }
         }

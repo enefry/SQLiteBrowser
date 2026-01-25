@@ -16,7 +16,7 @@ struct SQLiteBrowserDemoApp: App {
         WindowGroup {
             NavigationStack {
                 if let viewModel = appModel.databaseModel {
-                    SQLiteBrowser.ContentView(viewModel: viewModel)
+                    SQLiteBrowser.DashboardView(viewModel: viewModel)
                 } else {
                     ContentView(appModel: appModel)
                 }

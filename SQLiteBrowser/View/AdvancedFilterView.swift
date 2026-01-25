@@ -1,4 +1,9 @@
 import SwiftUI
+#if os(iOS)
+    import UIKit
+#elseif os(macOS)
+    import AppKit
+#endif
 
 /// 高级筛选器视图
 public struct AdvancedFilterView: View {
@@ -28,11 +33,12 @@ public struct AdvancedFilterView: View {
         ZStack {
             Color.gray.opacity(0.05).ignoresSafeArea() // 背景色
 
+
             VStack(spacing: 0) {
                 // 模式切换
                 modeSwitchView
                     .padding()
-                    .background(Color.white)
+                    .background(cardBackgroundColor)
 
                 ScrollView {
                     VStack(spacing: 24) {
@@ -111,7 +117,7 @@ public struct AdvancedFilterView: View {
                 .foregroundColor(.secondary)
         }
         .padding()
-        .background(Color.white)
+        .background(cardBackgroundColor)
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
     }
@@ -170,7 +176,7 @@ public struct AdvancedFilterView: View {
             }
         }
         .padding()
-        .background(Color.white)
+        .background(cardBackgroundColor)
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
     }
@@ -207,7 +213,7 @@ public struct AdvancedFilterView: View {
             .cornerRadius(8)
         }
         .padding()
-        .background(Color.white)
+        .background(cardBackgroundColor)
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
     }
@@ -235,7 +241,7 @@ public struct AdvancedFilterView: View {
             .disabled(viewModel.isLoading || (!showAdvancedMode && !hasValidConditions && !conditions.isEmpty))
         }
         .padding()
-        .background(Color.white)
+        .background(cardBackgroundColor)
         .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: -2)
     }
 
@@ -424,5 +430,12 @@ public struct AdvancedFilterView: View {
     private func clearFilter() {
         viewModel.clearAllFilters()
         dismiss()
+    }
+    private var cardBackgroundColor: Color {
+        #if os(iOS)
+            return Color(uiColor: .secondarySystemGroupedBackground)
+        #else
+            return Color(nsColor: .textBackgroundColor)
+        #endif
     }
 }
